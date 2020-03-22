@@ -8,16 +8,21 @@ macro_rules! route {
         impl charon::Route for $route_name {
             fn check(method: &hyper::Method, components: &[&str]) -> Option<Self> {
                 if method != &hyper::Method::$method {
+                    println!("wrong method, aborting");
                     return None;
                 }
 
                 $(
+                    println!("trying piece {} on {:?}", stringify!($pattern), components);
                     charon::route!( @chomp components $pattern);
                 )+
 
                 if !components.is_empty() {
+                    println!("remaining route not empty");
                     return None;
                 }
+
+                println!("success!");
 
                 Some(charon::route!( @initializer ($($pattern)+) ()))
             }
@@ -26,6 +31,7 @@ macro_rules! route {
 
     // terminal rule
     ( @struct $route_name: ident () ( $( $emitted_so_far: tt )* ) ) => {
+        #[derive(Debug)]
         struct $route_name {
             $( $emitted_so_far )*
         }
@@ -36,8 +42,8 @@ macro_rules! route {
         charon::route!( @struct $route_name ($($pattern)*) ($($emitted_so_far)*) );
     };
 
-    // Stars don't impact the struct
-    ( @struct $route_name: ident (* $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
+    // Wildcards don't impact the struct
+    ( @struct $route_name: ident (_ $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
         charon::route!( @struct $route_name ($($pattern)*) ($($emitted_so_far)*) );
     };
 
@@ -70,8 +76,8 @@ macro_rules! route {
         charon::route!( @initializer ($($pattern)*) ($($emitted_so_far)*) );
     };
 
-    // a star
-    ( @initializer (* $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
+    // wildcard component
+    ( @initializer (_ $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
         // no emit in struct definition
 
         charon::route!( @initializer ($($pattern)*) ($($emitted_so_far)*) );
@@ -95,7 +101,7 @@ macro_rules! route {
     };
 
     ( @chomp $components: ident / ) => {};
-    ( @chomp $components: ident * ) => {
+    ( @chomp $components: ident _ ) => {
         let $components = charon::internals::chomp_any($components)?;
     };
     ( @chomp $components: ident $component: ident) => {
@@ -115,6 +121,7 @@ macro_rules! router {
             charon::route!($route_name: $method ( $( $pattern )+ ));
         )*
 
+        #[derive(Debug)]
         enum $router_name {
             $(
                 $route_name($route_name),
@@ -125,7 +132,7 @@ macro_rules! router {
             fn route(method: &hyper::Method, uri: &str) -> Option<Self> {
                 use charon::Route;
 
-                let components: Vec<_> = uri.split('/').collect();
+                let components: Vec<_> = uri.split('/').filter(|x| !x.is_empty()).collect();
 
                 $(
                     if let Some(route) = $route_name::check(method, &components) {

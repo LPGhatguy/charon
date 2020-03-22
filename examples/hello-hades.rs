@@ -1,5 +1,6 @@
 use hyper::{header, Body, Error, Request, Response, StatusCode};
 
+#[derive(Debug)]
 struct MyCoolType(String);
 
 impl charon::FromUriComponent for MyCoolType {
@@ -13,7 +14,7 @@ charon::router!(Router {
     ApiRead: GET (/api/read/{ id: MyCoolType }),
     ApiWrite: POST (/api/write),
     ApiSubscribe: GET (/api/subscribe/{ cursor: u32 }),
-    ApiWildcard: GET (/api/foo/ */bar),
+    ApiWildcard: GET (/api/foo/_/bar),
 });
 
 async fn handle_request(request: Request<Body>) -> Result<Response<Body>, Error> {
