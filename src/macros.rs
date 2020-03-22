@@ -31,17 +31,22 @@ macro_rules! route {
         }
     };
 
-    // a slash
+    // Slashes don't impact the struct
     ( @struct $route_name: ident (/ $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
         charon::route!( @struct $route_name ($($pattern)*) ($($emitted_so_far)*) );
     };
 
-    // plain path component
+    // Stars don't impact the struct
+    ( @struct $route_name: ident (* $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
+        charon::route!( @struct $route_name ($($pattern)*) ($($emitted_so_far)*) );
+    };
+
+    // Plain path components don't impact the struct
     ( @struct $route_name: ident ($component: ident $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
         charon::route!( @struct $route_name ($($pattern)*) ($($emitted_so_far)*) );
     };
 
-    // path component with variable
+    // Variable path components turn into members on the struct
     ( @struct $route_name: ident ({ $member: ident: $ty: ty } $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
         charon::route!( @struct $route_name ($($pattern)*) ( $member: $ty, $($emitted_so_far)*) );
     };
@@ -65,6 +70,13 @@ macro_rules! route {
         charon::route!( @initializer ($($pattern)*) ($($emitted_so_far)*) );
     };
 
+    // a star
+    ( @initializer (* $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
+        // no emit in struct definition
+
+        charon::route!( @initializer ($($pattern)*) ($($emitted_so_far)*) );
+    };
+
     // plain path component
     ( @initializer ($component: ident $($pattern: tt)*) ($($emitted_so_far: tt)*) ) => {
         // no emit in struct definition
@@ -83,6 +95,9 @@ macro_rules! route {
     };
 
     ( @chomp $components: ident / ) => {};
+    ( @chomp $components: ident * ) => {
+        let $components = charon::internals::chomp_any($components)?;
+    };
     ( @chomp $components: ident $component: ident) => {
         let $components = charon::internals::chomp_exact($components, stringify!($component))?;
     };

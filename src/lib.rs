@@ -30,4 +30,12 @@ pub mod internals {
             }
         })
     }
+
+    pub fn chomp_any<'a>(components: &'a [&'a str]) -> Option<&'a [&'a str]> {
+        if components.is_empty() {
+            return None;
+        } else {
+            return Some(&components[1..]);
+        }
+    }
 }

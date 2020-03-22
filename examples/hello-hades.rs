@@ -13,6 +13,7 @@ charon::router!(Router {
     ApiRead: GET (/api/read/{ id: MyCoolType }),
     ApiWrite: POST (/api/write),
     ApiSubscribe: GET (/api/subscribe/{ cursor: u32 }),
+    ApiWildcard: GET (/api/foo/ */bar),
 });
 
 async fn handle_request(request: Request<Body>) -> Result<Response<Body>, Error> {
@@ -24,6 +25,7 @@ async fn handle_request(request: Request<Body>) -> Result<Response<Body>, Error>
         Some(Router::ApiRead(args)) => unimplemented!(),
         Some(Router::ApiWrite(args)) => unimplemented!(),
         Some(Router::ApiSubscribe(args)) => unimplemented!(),
+        Some(Router::ApiWildcard(args)) => unimplemented!(),
 
         None => Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
