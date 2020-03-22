@@ -8,21 +8,16 @@ macro_rules! route {
         impl charon::Route for $route_name {
             fn check(method: &hyper::Method, components: &[&str]) -> Option<Self> {
                 if method != &hyper::Method::$method {
-                    println!("wrong method, aborting");
                     return None;
                 }
 
                 $(
-                    println!("trying piece {} on {:?}", stringify!($pattern), components);
                     charon::route!( @chomp components $pattern);
                 )+
 
                 if !components.is_empty() {
-                    println!("remaining route not empty");
                     return None;
                 }
-
-                println!("success!");
 
                 Some(charon::route!( @initializer ($($pattern)+) ()))
             }
